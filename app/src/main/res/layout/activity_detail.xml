@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/backdrop_IV"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/movieposterimage"
+                android:scaleType="fitCenter"/>
+
+            <TextView
+                android:id="@+id/title_TV"
+                style="@style/DefualtTextView"
+                android:paddingTop="16dp"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
+            <TextView
+                android:id="@+id/release_TV"
+                style="@style/DefualtTextView" />
+
+            <RatingBar
+                android:id="@+id/rating_RB"
+                style="@style/Widget.AppCompat.RatingBar.Indicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:numStars="10"
+                android:paddingBottom="16dp"
+                android:paddingTop="16dp"
+                android:stepSize=".25"/>
+
+            <TextView
+                android:id="@+id/description_TV"
+                style="@style/DefualtTextView" />
+
+            <TextView
+                android:id="@+id/TV_TRAILERS"
+                style="@style/DefualtTextView"
+                android:paddingBottom="16dp"
+                android:text="@string/trailers"
+                android:textSize="32sp"/>
+
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/RV_Videos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"/>
+
+
+            <TextView
+                android:id="@+id/TV_Review_Header"
+                style="@style/DefualtTextView"
+                android:layout_gravity="center"
+                android:text="@string/Review_header"
+                android:textSize="32sp"
+                />
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/RV_Reviews"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"/>
+        </LinearLayout>
+
+</ScrollView>
