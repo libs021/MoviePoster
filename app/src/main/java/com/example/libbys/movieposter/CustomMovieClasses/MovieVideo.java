@@ -5,10 +5,10 @@ import android.os.Parcelable;
 
 public class MovieVideo implements Parcelable {
 
-    private String mdescription;
-    private String murl;
+    private final String mdescription;
+    private final String murl;
 
-    protected MovieVideo(Parcel in) {
+    private MovieVideo(Parcel in) {
         mdescription = in.readString();
         murl = in.readString();
     }

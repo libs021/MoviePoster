@@ -9,15 +9,16 @@ As of now they will only be created and accessed in the DetailActivity which is 
  so no need to reference the movie. */
 
 public class MovieReview implements Parcelable {
-    private String mUser;
-    private String mReview;
+    private final String mUser;
+    private final String mReview;
 
     public MovieReview(String user,String review) {
         mUser = user;
         mReview = review;
     }
 
-    protected MovieReview(Parcel in) {
+
+    private MovieReview(Parcel in) {
         mUser = in.readString();
         mReview = in.readString();
     }

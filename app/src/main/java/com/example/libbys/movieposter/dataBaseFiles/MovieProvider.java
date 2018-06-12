@@ -22,15 +22,17 @@ public class MovieProvider extends ContentProvider {
 
     //Will be used for the Uri matcher, but will also be added to a bundle on query so that the returner can distingush the
     //the table that was queried.
-    public static final int MOVIE = 100;
-    public static final int REVIEWS = 200;
-    public static final int VIDEOS = 300;
-    private static UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+    private static final int MOVIE = 100;
+    private static final int MOVIE_ID = 101;
+    private static final int REVIEWS = 200;
+    private static final int VIDEOS = 300;
+    private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
     static {
         sUriMatcher.addURI(movieContract.CONTENT_AUTHORITY,movieContract.PATH_MOVIES, MOVIE);
         sUriMatcher.addURI(movieContract.CONTENT_AUTHORITY,movieContract.PATH_REVIEWS,REVIEWS);
         sUriMatcher.addURI(movieContract.CONTENT_AUTHORITY,movieContract.PATH_VIDEOS,VIDEOS);
+        sUriMatcher.addURI(movieContract.CONTENT_AUTHORITY,movieContract.PATH_MOVIES + "/#",MOVIE_ID);
     }
     /**
      * Implement this to initialize your content provider on startup.
@@ -128,7 +130,7 @@ public class MovieProvider extends ContentProvider {
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
         SQLiteDatabase database = db.getReadableDatabase();
         String Table_name = "";
-        Cursor cursor = null;
+        Cursor cursor;
         switch (sUriMatcher.match(uri)) {
             case MOVIE:
                 Table_name = movieContract.movieEntry.TABLE_NAME;
@@ -140,6 +142,8 @@ public class MovieProvider extends ContentProvider {
                 Table_name= movieContract.reviewEntry.TABLE_NAME;
         }
         cursor = database.query(Table_name,projection,selection,selectionArgs,null,null,null);
+        //turn of inspection for this line of code as it gives a warning that getContentResolver could produce a nullPointerException
+        //noinspection ConstantConditions, in our case this isn't a concern
         cursor.setNotificationUri(getContext().getContentResolver(),uri);
         return cursor;
     }
@@ -232,6 +236,8 @@ public class MovieProvider extends ContentProvider {
         database.delete(movieContract.reviewEntry.TABLE_NAME,selection,selectionArgs);
         selection = movieContract.videoEntry.COLUMN_MOVIEID + "=?";
         database.delete(movieContract.videoEntry.TABLE_NAME,selection,selectionArgs);
+        //turn of inspection for this line of code as it gives a warning that getContentResolver could produce a nullPointerException
+        //noinspection ConstantConditions, in our case this isn't a concern
         getContext().getContentResolver().notifyChange(uri,null);
         return 0;
     }

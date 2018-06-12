@@ -21,7 +21,7 @@ import java.util.List;
 public class MovieVideoView extends RecyclerView.Adapter<MovieVideoView.VideoUrlViewHolder> {
 
     private ArrayList<MovieVideo> mvideos;
-    private Context mcontext;
+    private final Context mcontext;
 
     public MovieVideoView (ArrayList<MovieVideo> videos, Context context) {
         mvideos=videos;
@@ -109,7 +109,7 @@ public class MovieVideoView extends RecyclerView.Adapter<MovieVideoView.VideoUrl
 
         //Holds a text view that will contain the description of the video and when clicked on will open up the video in the users
         //favorite app
-        private TextView textView;
+        private final TextView textView;
 
         VideoUrlViewHolder(View itemView) {
             super(itemView);

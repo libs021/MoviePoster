@@ -2,7 +2,7 @@
     <string name="app_name">MoviePoster</string>
 
     //This is my apps API key for accessing the Movie Database API.
-    <string name="API" translatable="false">Insert Your API key here</string>
+    <string name="API" translatable="false">Insert your API key here</string>
     <string name="movieposterimage">MoviePosterImage</string>
 
     <string-array name="ListPreference_labels">

@@ -1,10 +1,6 @@
 package com.example.libbys.movieposter;
 
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.net.Uri;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -25,15 +21,10 @@ import com.example.libbys.movieposter.NetWorkUtils.JSONUtils;
 import com.example.libbys.movieposter.NetWorkUtils.Network;
 import com.example.libbys.movieposter.ViewsAndAdapters.MovieReviewView;
 import com.example.libbys.movieposter.ViewsAndAdapters.MovieVideoView;
-import com.example.libbys.movieposter.dataBaseFiles.movieContract;
+import com.example.libbys.movieposter.dataBaseFiles.movieHelper;
 import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Random;
 
 public class DetailActivity extends AppCompatActivity {
     private Movie movieToDetail;
@@ -182,75 +173,36 @@ public class DetailActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()) {
             case R.id.add:
-                addMovietoDB();
+                movieHelper.addMovietoDB(movieToDetail,this,movieReviewView);
+                movieToDetail.setFavorite(true);
                 break;
             case R.id.remove:
-                removeMovieFromDB();
+                movieHelper.removeMovieFromDB(movieToDetail,this);
+                movieToDetail.setFavorite(true);
+                break;
+            case R.id.settings:
+                Intent intent = new Intent (DetailActivity.this, SettingsActivity.class);
+                startActivity(intent);
         }
         return true;
     }
 
-    private void removeMovieFromDB() {
-        Uri uri = Uri.withAppendedPath(movieContract.BASE_CONTENT_URI,movieContract.PATH_MOVIES);
-        String where = movieContract.movieEntry.COLUMN_ID + "=?";
-        String [] args = {String.valueOf(movieToDetail.getID())};
-        getContentResolver().delete(uri,where,args);
-        movieToDetail.setFavorite(false);
-    }
-
-    private void addMovietoDB () {
-        ContentValues values = new ContentValues();
-        values.put(movieContract.movieEntry.COLUMN_BACKDROPPATH,movieToDetail.getBackDropPath());
-        values.put(movieContract.movieEntry.COLUMN_IMAGEPATH,movieToDetail.getImage());
-        values.put(movieContract.movieEntry.COLUMN_PLOT,movieToDetail.getPlot());
-        values.put(movieContract.movieEntry.COLUMN_RATING,movieToDetail.getAverage());
-        values.put(movieContract.movieEntry.COLUMN_RELEASEDATE,movieToDetail.getRelease());
-        values.put(movieContract.movieEntry.COLUMN_TITLE,movieToDetail.getTitle());
-        values.put(movieContract.movieEntry.COLUMN_ID,movieToDetail.getID());
-        Uri uri = Uri.withAppendedPath(movieContract.BASE_CONTENT_URI,movieContract.movieEntry.TABLE_NAME);
-        uri = getContentResolver().insert(uri,values);
-        //This will happen when you try to enter an invalid movie to the database, or a duplicate.
-        //returning here keeps us from entering double entries into the reviews and videos tables
-        if (ContentUris.parseId(uri)==-1) return;
-        addReviewstoDB(movieToDetail.getID(),movieReviewView.getReviews());
-        addVideostoDB(movieToDetail.getID(),movieVideoView.getMvideos());
-        movieToDetail.setFavorite(true);
-    }
 
 
     /**
-     * This method adds Videos to the database that are associated to movie with id
-     * This assumes that the movie is already in the database
-     * @param id   Movie Id that the video's are associated with
-     * @param mvideos List if Videos to add to database
+     * Take care of popping the fragment back stack or finishing the activity
+     * as appropriate.
      */
-    private void addVideostoDB(int id, ArrayList<MovieVideo> mvideos) {
-        ContentValues values = new ContentValues();
-        Uri uri = Uri.withAppendedPath(movieContract.BASE_CONTENT_URI,movieContract.PATH_VIDEOS);
-        for (MovieVideo video:mvideos) {
-            values.put(movieContract.videoEntry.COLUMN_MOVIEID,id);
-            values.put(movieContract.videoEntry.COLUMN_DESCRIPTION,video.getdescription());
-            values.put(movieContract.videoEntry.COLUMN_URL,video.geturl());
-            getContentResolver().insert(uri,values);
-        }
+    @Override
+    public void onBackPressed() {
+        Intent input = getIntent();
+        int position = input.getIntExtra("position",-1);
+        Intent output = new Intent();
+        output.putExtra("position",position);
+        output.putExtra("isfavorite",movieToDetail.isFavorite());
+        setResult(RESULT_OK, output);
+        super.onBackPressed();
     }
-
-    /** This method adds reviews to the database
-     * This assumes that the movie with id has already been added to the database
-     * @param id   Movie Id that the Reviews are associated with
-     * @param reviews List if Reviews to add to database
-     */
-    private void addReviewstoDB(int id, ArrayList<MovieReview> reviews) {
-        ContentValues values = new ContentValues();
-        Uri uri = Uri.withAppendedPath(movieContract.BASE_CONTENT_URI,movieContract.PATH_REVIEWS);
-        for (MovieReview review: reviews) {
-            values.put(movieContract.reviewEntry.COLUMN_MOVIEID,id);
-            values.put(movieContract.reviewEntry.COLUMN_USER,review.getmUser());
-            values.put(movieContract.reviewEntry.COLUMN_REVIEW,review.getmReview());
-            getContentResolver().insert(uri,values);
-        }
-    }
-
 
     private static class detailActivityNetwork extends AsyncTask<String,Void,String>{
 
@@ -300,6 +252,6 @@ public class DetailActivity extends AppCompatActivity {
             mActivity.get().movieReviewView.setReviews(JSONUtils.parseJsonMovieReviews(s));
             mActivity.get().movieReviewView.notifyDataSetChanged();
         }
-
     }
+
 }

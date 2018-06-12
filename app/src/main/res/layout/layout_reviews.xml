@@ -7,7 +7,7 @@
 
     <TextView
         style="@style/DefualtTextView"
-        android:textSize="16dp"
+        android:textSize="16sp"
         android:textStyle="bold"
         android:layout_height="wrap_content"
         android:id="@+id/TV_Review_User"

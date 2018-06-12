@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -27,6 +28,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 public  class MainActivity extends AppCompatActivity {
+    public static final int ACTIVITY_REQUEST = 72;
     private MoviePosterView adapter;
     private String currentView ="";
 
@@ -70,7 +72,7 @@ public  class MainActivity extends AppCompatActivity {
     private void load() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
         String sort = sharedPreferences.getString(MainActivity.this.getString(R.string.ListPreference_Key),
-                MainActivity.this.getString(R.string.Top_Rated_Label));
+                MainActivity.this.getString(R.string.Top_Rated_Value));
         if (!sort.equals(currentView)) {
             runAsyncTask(sort);
             currentView=sort;
@@ -97,7 +99,7 @@ public  class MainActivity extends AppCompatActivity {
             //Network call will return null if the network isn't connected.
             TextView error = mActivity.get().findViewById(R.id.TV_MAIN);
             RecyclerView view = mActivity.get().findViewById(R.id.RV_Main);
-            if (s==null) {
+            if (s == null) {
                 error.setVisibility(View.VISIBLE);
                 view.setVisibility(View.GONE);
                 return;
@@ -106,13 +108,33 @@ public  class MainActivity extends AppCompatActivity {
             view.setVisibility(View.VISIBLE);
             ArrayList<Movie> movies = JSONUtils.parseMovieListJSON(s);
             mActivity.get().setUpMovies(movies);
+            //This returns every movie id that is in the database thus indicating that it is a favorite and sets the isfavorite variable accordignly
+            Cursor cursor = mActivity.get().getContentResolver().query(Uri.withAppendedPath(movieContract.BASE_CONTENT_URI, movieContract.PATH_MOVIES),
+                    new String[]{movieContract.movieEntry.COLUMN_ID}, null, null, null);
+            if (cursor != null && cursor.getCount()!=0) {
+
+                for (Movie movie : movies) {
+                    int id = movie.getID();
+                    cursor.moveToFirst();
+                    do {
+                        if (id == cursor.getInt(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_ID))) {
+                            movie.setFavorite(true);
+                            Log.e("MainActivity", "onPostExecute: id" + id + ", Favorite ID" + cursor.getInt(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_ID)));
+
+                            return;
+                        }
+                    } while (cursor.moveToNext());
+
+                }
+                cursor.close();
+            }
         }
     }
 
     private static class getDataBaseInfo extends AsyncTask<Void,Void,Cursor>{
-        private WeakReference<MainActivity> mActivity;
+        private final WeakReference<MainActivity> mActivity;
 
-        public getDataBaseInfo (MainActivity activity) {
+        getDataBaseInfo (MainActivity activity) {
             mActivity = new WeakReference<>(activity);
         }
 
@@ -131,22 +153,23 @@ public  class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Cursor cursor) {
             ArrayList<Movie> movies = new ArrayList<>();
-            cursor.moveToFirst();
-            while(cursor.moveToNext()) {
-                String image = cursor.getString(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_IMAGEPATH));
-                String title = cursor.getString(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_TITLE));
-                String release = cursor.getString(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_RELEASEDATE));
-                Double average =cursor.getDouble(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_RATING));
-                String plot = cursor.getString(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_PLOT));
-                String backDropPath = cursor.getString(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_BACKDROPPATH));
-                int id = cursor.getInt(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_ID));
-                movies.add(new Movie(image,title,release,average,plot,backDropPath,id,true));
+            if (cursor.moveToFirst()) {
+                do {
+                    String image = cursor.getString(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_IMAGEPATH));
+                    String title = cursor.getString(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_TITLE));
+                    String release = cursor.getString(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_RELEASEDATE));
+                    Double average = cursor.getDouble(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_RATING));
+                    String plot = cursor.getString(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_PLOT));
+                    String backDropPath = cursor.getString(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_BACKDROPPATH));
+                    int id = cursor.getInt(cursor.getColumnIndex(movieContract.movieEntry.COLUMN_ID));
+                    movies.add(new Movie(image, title, release, average, plot, backDropPath, id, true));
+                } while (cursor.moveToNext());
+                TextView error = mActivity.get().findViewById(R.id.TV_MAIN);
+                RecyclerView view = mActivity.get().findViewById(R.id.RV_Main);
+                error.setVisibility(View.GONE);
+                view.setVisibility(View.VISIBLE);
+                mActivity.get().setUpMovies(movies);
             }
-            TextView error = mActivity.get().findViewById(R.id.TV_MAIN);
-            RecyclerView view = mActivity.get().findViewById(R.id.RV_Main);
-            error.setVisibility(View.GONE);
-            view.setVisibility(View.VISIBLE);
-            mActivity.get().setUpMovies(movies);
         }
 
         /**
@@ -245,5 +268,29 @@ public  class MainActivity extends AppCompatActivity {
         super.onResume();
         //this allows us to reload preferences if they changed.
         load();
+    }
+
+    /**
+     * Dispatch incoming result to the correct fragment.
+     *
+     * @param requestCode What request is providing the result
+     * @param resultCode the result of the request
+     * @param data Result of the request
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode==RESULT_OK) {
+            boolean favorite = data.getBooleanExtra("isfavorite",false);
+            int position = data.getIntExtra("position",-1);
+            Movie movie = adapter.getMovies().get(position);
+            //User was viewing a detail activity of a movie that was selected from the favorite list
+            //so if the movie is no longer a favorite (Detail activity removed the movie) we will remove the movie
+            if (!favorite && currentView.equals(getResources().getString(R.string.Favorite_Value))) {
+                adapter.getMovies().remove(movie);
+                adapter.notifyDataSetChanged();
+            }
+            else movie.setFavorite(favorite);
+        }
+        adapter.notifyDataSetChanged();
     }
 }

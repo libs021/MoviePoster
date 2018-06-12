@@ -1,5 +1,6 @@
 package com.example.libbys.movieposter.ViewsAndAdapters;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -12,7 +13,9 @@ import android.widget.ListView;
 
 import com.example.libbys.movieposter.CustomMovieClasses.Movie;
 import com.example.libbys.movieposter.DetailActivity;
+import com.example.libbys.movieposter.MainActivity;
 import com.example.libbys.movieposter.R;
+import com.example.libbys.movieposter.dataBaseFiles.movieHelper;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -65,9 +68,12 @@ public class MoviePosterView extends RecyclerView.Adapter<MoviePosterView.Poster
                     RecyclerView rv = (RecyclerView) parent;
                     int position = rv.getChildAdapterPosition(view);
                     Movie movie = movies.get(position);
-                    Intent intent = new Intent (context.getApplicationContext(), DetailActivity.class);
+                    Intent intent = new Intent (context, DetailActivity.class);
                     intent.putExtra("movie",movie);
-                    context.startActivity(intent);
+                    //The activity will return this back to mainactivity so that it can be updated.
+                    intent.putExtra("position",position);
+                    Activity activity = (Activity) context;
+                    activity.startActivityForResult(intent, MainActivity.ACTIVITY_REQUEST);
                 }
         });
         return new PosterViewHolder(root);
@@ -94,9 +100,31 @@ public class MoviePosterView extends RecyclerView.Adapter<MoviePosterView.Poster
      * @param position The position of the item within the adapter's data set.
      */
     @Override
-    public void onBindViewHolder(@NonNull PosterViewHolder holder, int position) {
-        String urlForPoster = movies.get(position).getImage();
+    public void onBindViewHolder(@NonNull final PosterViewHolder holder, int position) {
+        final Movie movie = movies.get(position);
+        String urlForPoster = movie.getImage();
         Picasso.with(context).load(urlForPoster).into(holder.getPoster());
+        if (movie.isFavorite()) {
+            holder.getIsFavorite().setImageResource(R.drawable.is_favorite);
+        }
+        else holder.getIsFavorite().setImageResource(R.drawable.add_favorite);
+        holder.getIsFavorite().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (movie.isFavorite()) {
+                    movieHelper.removeMovieFromDB(movie,context);
+                    holder.getIsFavorite().setImageResource(R.drawable.add_favorite);
+                    movie.setFavorite(false);
+                }
+                else {
+                    movieHelper.addMovietoDB(movie,context,null);
+                    holder.getIsFavorite().setImageResource(R.drawable.is_favorite);
+                    movie.setFavorite(true);
+                }
+            }
+        });
+
+
     }
 
     /**
@@ -115,15 +143,18 @@ public class MoviePosterView extends RecyclerView.Adapter<MoviePosterView.Poster
     }
 
 
-    public class PosterViewHolder extends RecyclerView.ViewHolder {
+    class PosterViewHolder extends RecyclerView.ViewHolder {
         private final ImageView Poster;
+        private final ImageView isFavorite;
 
         PosterViewHolder(View itemView) {
             super(itemView);
             Poster = itemView.findViewById(R.id.poster_IV);
+            isFavorite = itemView.findViewById(R.id.favorite);
         }
 
         ImageView getPoster() {return Poster;}
+        ImageView getIsFavorite() {return isFavorite;}
     }
 
 }

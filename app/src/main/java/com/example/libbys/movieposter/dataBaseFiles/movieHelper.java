@@ -1,9 +1,19 @@
 package com.example.libbys.movieposter.dataBaseFiles;
 
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.net.Uri;
 import android.util.Log;
+
+import com.example.libbys.movieposter.CustomMovieClasses.Movie;
+import com.example.libbys.movieposter.CustomMovieClasses.MovieReview;
+import com.example.libbys.movieposter.ViewsAndAdapters.MovieReviewView;
+import com.example.libbys.movieposter.ViewsAndAdapters.MovieVideoView;
+
+import java.util.ArrayList;
 
 import static android.support.constraint.Constraints.TAG;
 
@@ -89,5 +99,48 @@ public class movieHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
+    }
+
+    /** This method adds reviews to the database
+     * This assumes that the movie with id has already been added to the database
+     * @param id   Movie Id that the Reviews are associated with
+     * @param reviews List if Reviews to add to database
+     */
+    private static void addReviewstoDB(int id, ArrayList<MovieReview> reviews, Context context) {
+        ContentValues values = new ContentValues();
+        Uri uri = Uri.withAppendedPath(movieContract.BASE_CONTENT_URI,movieContract.PATH_REVIEWS);
+        for (MovieReview review: reviews) {
+            values.put(movieContract.reviewEntry.COLUMN_MOVIEID,id);
+            values.put(movieContract.reviewEntry.COLUMN_USER,review.getmUser());
+            values.put(movieContract.reviewEntry.COLUMN_REVIEW,review.getmReview());
+            context.getContentResolver().insert(uri,values);
+        }
+    }
+
+        public static void addMovietoDB (Movie movieToDetail, Context context, MovieReviewView reviews) {
+        ContentValues values = new ContentValues();
+        values.put(movieContract.movieEntry.COLUMN_BACKDROPPATH,movieToDetail.getBackDropPath());
+        values.put(movieContract.movieEntry.COLUMN_IMAGEPATH,movieToDetail.getImage());
+        values.put(movieContract.movieEntry.COLUMN_PLOT,movieToDetail.getPlot());
+        values.put(movieContract.movieEntry.COLUMN_RATING,movieToDetail.getAverage());
+        values.put(movieContract.movieEntry.COLUMN_RELEASEDATE,movieToDetail.getRelease());
+        values.put(movieContract.movieEntry.COLUMN_TITLE,movieToDetail.getTitle());
+        values.put(movieContract.movieEntry.COLUMN_ID,movieToDetail.getID());
+        Uri uri = Uri.withAppendedPath(movieContract.BASE_CONTENT_URI,movieContract.movieEntry.TABLE_NAME);
+        uri = context.getContentResolver().insert(uri,values);
+        //This will happen when you try to enter an invalid movie to the database, or a duplicate.
+        //returning here keeps us from entering double entries into the reviews and videos tables
+        if (ContentUris.parseId(uri)==-1) return;
+        //TODO when adding a movie to favorite from Main Activity we set the reviews to null as MainActivity doesn't have this info
+            // implement gathering this info here
+        if (reviews!=null) addReviewstoDB(movieToDetail.getID(), reviews.getReviews(), context);
+    }
+
+    public static void removeMovieFromDB(Movie movieToDetail, Context context) {
+        Uri uri = Uri.withAppendedPath(movieContract.BASE_CONTENT_URI,movieContract.PATH_MOVIES);
+        String where = movieContract.movieEntry.COLUMN_ID + "=?";
+        String [] args = {String.valueOf(movieToDetail.getID())};
+        context.getContentResolver().delete(uri,where,args);
+        movieToDetail.setFavorite(false);
     }
 }

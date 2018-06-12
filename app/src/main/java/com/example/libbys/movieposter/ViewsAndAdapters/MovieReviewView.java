@@ -99,8 +99,8 @@ public class MovieReviewView extends RecyclerView.Adapter<MovieReviewView.Review
     }
 
     class ReviewHolder extends RecyclerView.ViewHolder {
-        TextView user;
-        TextView review;
+        final TextView user;
+        final TextView review;
 
 
          ReviewHolder(View itemView) {

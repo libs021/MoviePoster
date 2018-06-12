@@ -6,19 +6,19 @@ import android.os.Parcelable;
 public class Movie implements Parcelable{
 
     //represents the url to retrieve the thumbnail image
-    private String mImagePath;
+    private final String mImagePath;
     //represents the title of the movie
-    private String mTitle;
+    private final String mTitle;
     //represents the release date of the movie in String format
-    private String mRelease;
+    private final String mRelease;
     //represents the average rating of the movie
-    private Double mAverage;
+    private final Double mAverage;
     // Brief multi line description of the move
-    private String mPlot;
+    private final String mPlot;
     //Url that will retrieve the backdrop image
-    private String mBackDropPath;
+    private final String mBackDropPath;
     //id used to uniquely identify each movie
-    private int mID;
+    private final int mID;
     // declares if this movie is a favorite
     private boolean isFavorite = false;
 
@@ -51,7 +51,7 @@ public class Movie implements Parcelable{
         mPlot = plot;
         mBackDropPath= BackDropPath;
         mID = id;
-        isFavorite=true;
+        isFavorite=favorite;
     }
 
     public static final Creator<Movie> CREATOR = new Creator<Movie>() {
